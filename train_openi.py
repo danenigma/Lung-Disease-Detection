@@ -115,8 +115,10 @@ def main(args):
 					best_val = val_loss
 					print("Found new best val")
 					torch.save(model.state_dict(), 
-						   os.path.join(args.resnet_path, 
-										'resnet152.pkl'))
+						   os.path.join(
+						   				args.model_path, 
+						   				args.resnet_path, 
+										))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
