@@ -9,6 +9,7 @@ __pycache__/
 *.png
 *.jpg
 *.xml
+*.zip
 # Distribution / packaging
 .Python
 env/
