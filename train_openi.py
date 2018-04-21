@@ -109,7 +109,7 @@ def main(args):
 			
 			# Save the models
 		if (epoch+1) % args.save_step == 0:
-				val_loss = validate(model, val_data_loader, criterion)
+				val_loss = validate(model, val_data_loader, criterion)/n_val_batchs
 				print('val loss: ', val_loss)
 				if val_loss < best_val:
 					best_val = val_loss
