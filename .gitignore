@@ -6,7 +6,9 @@ __pycache__/
 # C extensions
 *.so
 *.jpeg
+*.png
 *.jpg
+*.xml
 # Distribution / packaging
 .Python
 env/
