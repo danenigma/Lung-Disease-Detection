@@ -128,7 +128,7 @@ if __name__ == '__main__':
                         help='step size for prining log info')
     parser.add_argument('--save_step', type=int , default=1,
                         help='step size for saving trained models')
-    parser.add_argument('--resnet_path', type=str, default='./models/resnet152.pkl',
+    parser.add_argument('--resnet_path', type=str, default='resnet152.pkl',
                         help='path for trained encoder')
     # Model parameters
     parser.add_argument('--embed_size', type=int , default=256 ,
