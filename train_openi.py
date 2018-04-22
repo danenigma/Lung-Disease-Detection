@@ -24,7 +24,7 @@ def validate(model, data_loader, criterion):
 		images, labels = to_var(images), to_var(labels)
 		out  = model(images)
 
-		pred = outputs.data.max(1, keepdim=True)[1].int()
+		pred = out.data.max(1, keepdim=True)[1].int()
 		predicted = pred.eq(labels.data.view_as(pred).int())
 		print(predicted.sum(),' /32')
 		correct += predicted.sum()
