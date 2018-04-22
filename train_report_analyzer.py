@@ -136,7 +136,7 @@ def main(args):
 				epoch_loss / (batch_index+1)))
 
 		val_loss = validate(model, val_data_loader, criterion, args.batch_size)/n_val_batchs
-
+		print('train acc: ', correct/len(train_ds))
 		print('=' * 83)
 		print(
 			'|epoch {:3d}|valid loss {:5.4f}|'
