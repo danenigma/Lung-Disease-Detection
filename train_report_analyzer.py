@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import os
+import time
 import pickle
 from models import * 
 from torch.autograd import Variable 
@@ -106,6 +107,7 @@ def main(args):
 		model.train()
 		epoch_loss = 0
 		correct    = 0
+		epoch_time = time.time()
 		for batch_index, batch_dict in enumerate(train_data_loader):
 			optimizer.zero_grad()
 	
@@ -133,14 +135,13 @@ def main(args):
 				batch_index+1,
 				epoch_loss / (batch_index+1)))
 
-		val_loss = validate(model, val_data_loader, criterion)/n_val_batchs
+		val_loss = validate(model, val_data_loader, criterion, args.batch_size)/n_val_batchs
 
 		print('=' * 83)
 		print(
-			'|epoch {:3d}|time: {:5.2f}s|valid loss {:5.2f}|'
-			'train loss {:8.2f}'.format(
+			'|epoch {:3d}|valid loss {:5.4f}|'
+			'train loss {:8.4f}'.format(
 			    epoch + 1,
-			    (time.time() - epoch_time),
 			    val_loss,
 			    train_loss))
 			# Save the models
