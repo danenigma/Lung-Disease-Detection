@@ -19,6 +19,7 @@ def validate(model, data_loader, criterion):
 	val_loss = 0
 	model.eval()
 	correct = 0
+	
 	for i, (images, labels) in enumerate(data_loader):
 
 		images, labels = to_var(images), to_var(labels)
@@ -26,12 +27,11 @@ def validate(model, data_loader, criterion):
 
 		pred = out.data.max(1, keepdim=True)[1].int()
 		predicted = pred.eq(labels.data.view_as(pred).int())
-		print(predicted.sum(),' /32')
 		correct += predicted.sum()
 
 		loss = criterion(out, labels)
 		val_loss += loss.data.sum()
-		
+	print('val acc : ', correct/770)
 	return val_loss
 
 def main(args):
