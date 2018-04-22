@@ -129,10 +129,10 @@ def main(args):
 
 			# Print log info
 			if batch_index % args.log_step == 0:
-			    print('Epoch [%d/%d], Step [%d/%d], Loss: %.4f, Acc: %.4f'
-			          %(epoch, args.num_epochs, batch_index, n_train_batchs, 
-			            epoch_loss / (batch_index+1), correct/3000)) 
-			
+				print('|batch {:4d}|train loss {:5.2f}|'.format(
+				batch_index+1,
+				epoch_loss / (batch_index+1)))
+
 			# Save the models
 		if (epoch+1) % args.save_step == 0:
 				val_loss = validate(model, val_data_loader, criterion)/n_val_batchs
