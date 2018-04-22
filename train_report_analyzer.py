@@ -113,6 +113,9 @@ def main(args):
 			if reports.shape[1]!=args.batch_size:break
 			seq_lens  = batch_dict['seq_lens']
 			labels    = to_var(batch_dict['labels'])
+			
+			model.hidden = model.init_hidden()
+			
 			out       = model(reports, seq_lens)
 			pred      = out.data.max(1, keepdim=True)[1].int()
 			predicted = pred.eq(labels.data.view_as(pred).int())
@@ -120,7 +123,7 @@ def main(args):
 			loss      = criterion(out.squeeze(1), labels.float())
 			epoch_loss += loss.data.sum()
 							
-			loss.backward(retain_graph=True)
+			loss.backward()
 			grad_norm = nn.utils.clip_grad_norm(model.parameters(), 200)
 			optimizer.step()
 
