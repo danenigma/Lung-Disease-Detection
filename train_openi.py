@@ -16,10 +16,11 @@ def to_var(x, volatile=False):
     return Variable(x, volatile=volatile)
 def validate(model, data_loader, criterion):
     
-	val_loss = 0
+
 	model.eval()
-	correct = 0
-	
+	correct  = 0
+	val_loss = 0
+		
 	for i, (images, labels) in enumerate(data_loader):
 
 		images, labels = to_var(images), to_var(labels)

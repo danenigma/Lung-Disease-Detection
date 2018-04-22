@@ -12,17 +12,18 @@ from data_loader import *
 from utils import *
 from create_dict import *
 
-def validate(model, data_loader, criterion):
+def validate(model, data_loader, criterion, bsz=4):
     
 	val_loss = 0
+	correct  = 0
 	model.eval()
-	correct = 0
 
 	for batch_index, batch_dict in enumerate(data_loader):
 
 		reports   = to_var(batch_dict['reports'])
 		seq_lens  = batch_dict['seq_lens']
 		labels    = to_var(batch_dict['labels'])
+		if reports.shape[1]!=bsz:break
 		out       = model(reports, seq_lens)
 		pred      = out.data.max(1, keepdim=True)[1].int()
 		predicted = pred.eq(labels.data.view_as(pred).int())
@@ -52,13 +53,13 @@ def main(args):
 
 	lang_word, lang_char = buildDict([val_reports, train_reports])
 
-	train_ds    = OpenIReportDataset(lang_word, data_dir, name='val')
+	train_ds    = OpenIReportDataset(lang_word, data_dir, name='train')
 	train_data_loader = data.DataLoader(train_ds, 
 						 batch_size = args.batch_size,
 						 shuffle = True,
 						 collate_fn = report_collate)
 						 
-	val_ds      = OpenIReportDataset(lang_word, data_dir, name='train')
+	val_ds      = OpenIReportDataset(lang_word, data_dir, name='val')
 	val_data_loader = data.DataLoader(val_ds, 
 						 batch_size = args.batch_size,
 						 shuffle = True,
@@ -94,9 +95,10 @@ def main(args):
 	print('validating.....')
 	n_train_batchs   = len(train_ds)//args.batch_size
 	n_val_batchs     = len(val_ds)//args.batch_size
-	
-	best_val = validate(model, val_data_loader, criterion)/n_val_batchs
-	
+	print('val ds: ',  len(val_ds))
+	best_val = validate(model, val_data_loader, 
+						criterion, bsz=args.batch_size)/n_val_batchs
+	return
 	print("starting val loss {:f}".format(best_val))
 	
 	for epoch in range(args.num_epochs):
@@ -108,6 +110,7 @@ def main(args):
 			optimizer.zero_grad()
 	
 			reports   = to_var(batch_dict['reports'])
+			if reports.shape[1]!=args.batch_size:break
 			seq_lens  = batch_dict['seq_lens']
 			labels    = to_var(batch_dict['labels'])
 			out       = model(reports, seq_lens)
