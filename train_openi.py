@@ -16,14 +16,19 @@ def to_var(x, volatile=False):
     return Variable(x, volatile=volatile)
 def validate(model, data_loader, criterion):
     
-	val_size = len(data_loader)
 	val_loss = 0
 	model.eval()
-
+	correct = 0
 	for i, (images, labels) in enumerate(data_loader):
 
 		images, labels = to_var(images), to_var(labels)
 		out  = model(images)
+
+		pred = outputs.data.max(1, keepdim=True)[1].int()
+		predicted = pred.eq(labels.data.view_as(pred).int())
+		print(predicted.sum(),' /32')
+		correct += predicted.sum()
+
 		loss = criterion(out, labels)
 		val_loss += loss.data.sum()
 		
@@ -100,7 +105,7 @@ def main(args):
 			images, labels = to_var(images), to_var(labels)
 
 			# Forward, Backward and Optimize
-			model.zero_grad()
+			optimizer.zero_grad()
 			out  = model(images)
 			loss = criterion(out, labels)
 			loss.backward()
