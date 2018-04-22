@@ -77,12 +77,13 @@ def main(args):
 		model.cuda()
 		criterion.cuda()
 	# Loss and Optimizer
-	params     = list(list(model.linear1.parameters()) 
+	params     = list(
+					  list(model.linear1.parameters()) 
 					+ list(model.linear2.parameters())
 					+ list(model.linear3.parameters())
 					)
 	
-	optimizer  = torch.optim.Adam(params, lr=1e-4)
+	optimizer  = torch.optim.Adam(model.parameters(), lr=1e-3)
 	
 	print('validating.....')
 	n_train_batchs   = len(train_ds)//args.batch_size
