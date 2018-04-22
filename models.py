@@ -109,13 +109,14 @@ class ReportAnalysis(nn.Module):
 		self.lstm       = nn.LSTM(input_size=embedding_dim, 
 								  hidden_size=hidden_dim,
 								  num_layers = num_layers,
+								  dropout=dropout,
 								  bidirectional=bidirectional)	
 		self.bimul = 1
 		if bidirectional:self.bimul=2				  
 		self.projection = nn.Linear(hidden_dim*self.bimul, label_size)
 		self.num_layers = num_layers
-		if not bidirectional:
-			self.embedding_dim.weight = self.projection.weight
+		#if not bidirectional:
+		#	 self.projection.weight = self.embeddings.weight 
 		self.init_weights()
 		self.hidden = self.init_hidden()
 
@@ -143,10 +144,10 @@ class ReportAnalysis(nn.Module):
 
 	def forward(self, reports, seq_lens):
 
-		emb = self.drop(self.embeddings(reports.squeeze(2)))
+		emb = self.embeddings(reports.squeeze(2))
 		packed_input = pack_padded_sequence(emb, seq_lens.cpu().numpy())
 		out,  self.hidden = self.lstm(packed_input, self.hidden)
-		out       = self.drop(out)
+		out       = out
 		out, lens = pad_packed_sequence(out)
 		lengths = [l - 1 for l in seq_lens] #extract last cell output
 		out = out[lengths, range(len(lengths))]
