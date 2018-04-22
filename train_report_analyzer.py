@@ -143,7 +143,7 @@ def main(args):
 			'train loss {:8.4f}'.format(
 			    epoch + 1,
 			    val_loss,
-			    epoch_loss))
+			    epoch_loss/n_train_batchs))
 			# Save the models
 		if (epoch+1) % args.save_step == 0:
 				if val_loss < best_val:
