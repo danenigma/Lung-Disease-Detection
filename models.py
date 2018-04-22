@@ -153,7 +153,7 @@ class ReportAnalysis(nn.Module):
 		out = out[lengths, range(len(lengths))]
 		out = self.projection(out)
 		
-		return F.sigmoid(out)
+		return out
 
 if __name__=='__main__':
 	resnet = ResNetCNN()

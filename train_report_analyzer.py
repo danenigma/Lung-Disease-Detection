@@ -75,7 +75,7 @@ def main(args):
 						   label_size=1,
 						   bidirectional=args.bi)
 						   
-	criterion = nn.BCELoss()
+	criterion = nn.BCEWithLogitsLoss()
 	print(model)
 
 	model_path = os.path.join(args.model_dir, args.model_name)	
