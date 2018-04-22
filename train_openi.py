@@ -62,7 +62,7 @@ def main(args):
 							 batch_size = args.batch_size,
 							 shuffle = True)
 
-	model = ResNetCNN()
+	model = DenseNet121()
 	criterion = nn.CrossEntropyLoss()
 
 
@@ -77,7 +77,11 @@ def main(args):
 		model.cuda()
 		criterion.cuda()
 	# Loss and Optimizer
-	params     = list(list(model.linear1.parameters()) + list(model.linear2.parameters()))
+	params     = list(list(model.linear1.parameters()) 
+					+ list(model.linear2.parameters())
+					+ list(model.linear3.parameters())
+					)
+	
 	optimizer  = torch.optim.Adam(params, lr=1e-4)
 	
 	print('validating.....')
@@ -95,8 +99,8 @@ def main(args):
 			images, labels = to_var(images), to_var(labels)
 
 			# Forward, Backward and Optimize
-			optimizer.zero_grad()
-			out = model(images)
+			model.zero_grad()
+			out  = model(images)
 			loss = criterion(out, labels)
 			loss.backward()
 			optimizer.step()
