@@ -97,14 +97,14 @@ class ReportAnalysis(nn.Module):
 
 	def __init__(self, vocab_size, embedding_dim, hidden_dim,
 					   batch_size, num_layers=3, label_size=1,
-					   bidirectional=False):
+					   dropout=0.5, bidirectional=False):
 
 		super(ReportAnalysis, self).__init__()
 
 		self.embedding_dim = embedding_dim
 		self.hidden_dim    = hidden_dim
 		self.batch_size    = batch_size
-
+		self.drop = nn.Dropout(dropout)
 		self.embeddings = nn.Embedding(vocab_size+1, embedding_dim)
 		self.lstm       = nn.LSTM(input_size=embedding_dim, 
 								  hidden_size=hidden_dim,
@@ -114,12 +114,15 @@ class ReportAnalysis(nn.Module):
 		if bidirectional:self.bimul=2				  
 		self.projection = nn.Linear(hidden_dim*self.bimul, label_size)
 		self.num_layers = num_layers
+		if not bidirectional:
+			self.embedding_dim.weight = self.projection.weight
 		self.init_weights()
 		self.hidden = self.init_hidden()
 
 	def init_weights(self):
 		"""Initialize the weights."""
-		self.projection.weight.data.normal_(0.0, 0.02)
+		initrange = 0.1
+		self.projection.weight.data.uniform_(-initrange, initrange)
 		prop_abnormal = 0.635
 		data_dist = torch.FloatTensor([prop_abnormal])
 		self.projection.bias.data= data_dist#.fill_(0)
@@ -140,9 +143,10 @@ class ReportAnalysis(nn.Module):
 
 	def forward(self, reports, seq_lens):
 
-		emb = self.embeddings(reports.squeeze(2))
+		emb = self.drop(self.embeddings(reports.squeeze(2)))
 		packed_input = pack_padded_sequence(emb, seq_lens.cpu().numpy())
 		out,  self.hidden = self.lstm(packed_input, self.hidden)
+		out       = self.drop(out)
 		out, lens = pad_packed_sequence(out)
 		lengths = [l - 1 for l in seq_lens] #extract last cell output
 		out = out[lengths, range(len(lengths))]
