@@ -133,10 +133,18 @@ def main(args):
 				batch_index+1,
 				epoch_loss / (batch_index+1)))
 
+		val_loss = validate(model, val_data_loader, criterion)/n_val_batchs
+
+		print('=' * 83)
+		print(
+			'|epoch {:3d}|time: {:5.2f}s|valid loss {:5.2f}|'
+			'train loss {:8.2f}'.format(
+			    epoch + 1,
+			    (time.time() - epoch_time),
+			    val_loss,
+			    train_loss))
 			# Save the models
 		if (epoch+1) % args.save_step == 0:
-				val_loss = validate(model, val_data_loader, criterion)/n_val_batchs
-				print('val loss: ', val_loss)
 				if val_loss < best_val:
 					best_val = val_loss
 					print("Found new best val")
