@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence
 from torch.autograd import Variable
 
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 class ResNetCNN(nn.Module):
 
@@ -46,6 +47,7 @@ class ResNetCNN(nn.Module):
 		features = F.relu(self.linear3(features))
 
 		return features
+
 class DenseNet121(nn.Module):
 
 	def __init__(self):
@@ -90,6 +92,63 @@ class DenseNet121(nn.Module):
 		features = F.relu(self.linear3(features))
 
 		return features
+
+class ReportAnalysis(nn.Module):
+
+	def __init__(self, vocab_size, embedding_dim, hidden_dim,
+					   batch_size, num_layers=3, label_size=1,
+					   bidirectional=False):
+
+		super(ReportAnalysis, self).__init__()
+
+		self.embedding_dim = embedding_dim
+		self.hidden_dim    = hidden_dim
+		self.batch_size    = batch_size
+
+		self.embeddings = nn.Embedding(vocab_size+1, embedding_dim)
+		self.lstm       = nn.LSTM(input_size=embedding_dim, 
+								  hidden_size=hidden_dim,
+								  num_layers = num_layers,
+								  bidirectional=bidirectional)	
+		self.bimul = 1
+		if bidirectional:self.bimul=2				  
+		self.projection = nn.Linear(hidden_dim*self.bimul, label_size)
+		self.num_layers = num_layers
+		self.init_weights()
+		self.hidden = self.init_hidden()
+
+	def init_weights(self):
+		"""Initialize the weights."""
+		self.projection.weight.data.normal_(0.0, 0.02)
+		prop_abnormal = 0.635
+		data_dist = torch.FloatTensor([prop_abnormal])
+		self.projection.bias.data= data_dist#.fill_(0)
+
+	def init_hidden(self):
+
+		if torch.cuda.is_available():
+		
+		    return (Variable(torch.zeros(self.bimul*self.num_layers, 
+		    							 self.batch_size, self.hidden_dim).cuda()),
+		            Variable(torch.zeros(self.bimul*self.num_layers, 
+		            					 self.batch_size, self.hidden_dim).cuda()))
+		else:
+		    return (Variable(torch.zeros(self.bimul*self.num_layers,
+		    							 self.batch_size, self.hidden_dim)),
+					Variable(torch.zeros(self.bimul*self.num_layers, 
+										 self.batch_size, self.hidden_dim)))		
+
+	def forward(self, reports, seq_lens):
+
+		emb = self.embeddings(reports.squeeze(2))
+		packed_input = pack_padded_sequence(emb, seq_lens.cpu().numpy())
+		out,  self.hidden = self.lstm(packed_input, self.hidden)
+		out, lens = pad_packed_sequence(out)
+		lengths = [l - 1 for l in seq_lens] #extract last cell output
+		out = out[lengths, range(len(lengths))]
+		out = self.projection(out)
+		
+		return F.sigmoid(out)
 
 if __name__=='__main__':
 	resnet = ResNetCNN()

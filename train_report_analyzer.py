@@ -1,0 +1,168 @@
+import argparse
+import torch
+import torch.nn as nn
+import numpy as np
+import os
+import pickle
+from models import * 
+from torch.autograd import Variable 
+from torch.nn.utils.rnn import pack_padded_sequence
+from torchvision import transforms
+from data_loader import *
+from utils import *
+from create_dict import *
+
+def validate(model, data_loader, criterion):
+    
+	val_loss = 0
+	model.eval()
+	correct = 0
+
+	for batch_index, batch_dict in enumerate(data_loader):
+
+		reports   = to_var(batch_dict['reports'])
+		seq_lens  = batch_dict['seq_lens']
+		labels    = to_var(batch_dict['labels'])
+		out       = model(reports, seq_lens)
+		pred      = out.data.max(1, keepdim=True)[1].int()
+		predicted = pred.eq(labels.data.view_as(pred).int())
+		correct  += predicted.sum()
+		loss      = criterion(out.squeeze(1), labels.float())
+	
+		val_loss += loss.data.sum()
+		
+	print('val acc : ', correct/770)
+	return val_loss
+
+def main(args):
+
+	if not os.path.exists(args.model_dir):
+		os.makedirs(args.model_dir)
+
+	data_dir  = 'data/images'
+	name      = 'train'
+	train_table     = pd.read_pickle(os.path.join(data_dir,'{}_table.pkl'.format(name)))	
+	train_reports   = train_table.report
+	train_reports   = [filter_sen(report) for report in train_reports]
+	name          = 'val'
+	val_table     = pd.read_pickle(os.path.join(data_dir,'{}_table.pkl'.format(name)))	
+	val_reports   = val_table.report
+	val_reports   = [filter_sen(report) for report in val_reports]
+
+
+	lang_word, lang_char = buildDict([val_reports, train_reports])
+
+	train_ds    = OpenIReportDataset(lang_word, data_dir, name='val')
+	train_data_loader = data.DataLoader(train_ds, 
+						 batch_size = args.batch_size,
+						 shuffle = True,
+						 collate_fn = report_collate)
+						 
+	val_ds      = OpenIReportDataset(lang_word, data_dir, name='train')
+	val_data_loader = data.DataLoader(val_ds, 
+						 batch_size = args.batch_size,
+						 shuffle = True,
+						 collate_fn = report_collate)
+	vocab_size = len(lang_word.word2index)
+	
+	model = ReportAnalysis(vocab_size=vocab_size,
+						   embedding_dim=args.embed_size, 
+						   hidden_dim=args.hidden_size, 
+						   batch_size=args.batch_size, 
+						   num_layers=args.num_layers,
+						   label_size=1,
+						   bidirectional=args.bi)
+						   
+	criterion = nn.BCELoss()
+	print(model)
+
+	model_path = os.path.join(args.model_dir, args.model_name)	
+	try:
+
+		model.load_state_dict(torch.load(model_path))
+		print('using pre-trained model: ', model_path)
+	except:
+		print("using new model")
+
+	if torch.cuda.is_available():
+		model.cuda()
+		criterion.cuda()
+	
+	optimizer  = torch.optim.Adam(model.parameters(), lr=args.lr)
+	
+		
+	print('validating.....')
+	n_train_batchs   = len(train_ds)//args.batch_size
+	n_val_batchs     = len(val_ds)//args.batch_size
+	
+	best_val = validate(model, val_data_loader, criterion)/n_val_batchs
+	
+	print("starting val loss {:f}".format(best_val))
+	
+	for epoch in range(args.num_epochs):
+
+		model.train()
+		epoch_loss = 0
+		correct    = 0
+		for batch_index, batch_dict in enumerate(train_data_loader):
+			optimizer.zero_grad()
+	
+			reports   = to_var(batch_dict['reports'])
+			seq_lens  = batch_dict['seq_lens']
+			labels    = to_var(batch_dict['labels'])
+			out       = model(reports, seq_lens)
+			pred      = out.data.max(1, keepdim=True)[1].int()
+			predicted = pred.eq(labels.data.view_as(pred).int())
+			correct  += predicted.sum()
+			loss      = criterion(out.squeeze(1), labels.float())
+			epoch_loss += loss.data.sum()
+							
+			loss.backward(retain_graph=True)
+			grad_norm = nn.utils.clip_grad_norm(model.parameters(), 200)
+			optimizer.step()
+
+			# Print log info
+			if batch_index % args.log_step == 0:
+			    print('Epoch [%d/%d], Step [%d/%d], Loss: %.4f, Acc: %.4f'
+			          %(epoch, args.num_epochs, batch_index, n_train_batchs, 
+			            epoch_loss / (batch_index+1), correct/3000)) 
+			
+			# Save the models
+		if (epoch+1) % args.save_step == 0:
+				val_loss = validate(model, val_data_loader, criterion)/n_val_batchs
+				print('val loss: ', val_loss)
+				if val_loss < best_val:
+					best_val = val_loss
+					print("Found new best val")
+					torch.save(model.state_dict(),model_path)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model_dir', type=str, default='models/' ,
+                        help='path for saving trained models')
+    parser.add_argument('--data_dir', type=str, default='data/' ,
+                        help='directory for resized images')
+    parser.add_argument('--log_step', type=int , default=1,
+                        help='step size for prining log info')
+    parser.add_argument('--save_step', type=int , default=1,
+                        help='step size for saving trained models')
+    parser.add_argument('--model_name', type=str, default='report.pkl',
+                        help='path for trained encoder')
+    # Model parameters
+    parser.add_argument('--embed_size', type=int , default=256 ,
+                        help='dimension of word embedding vectors')
+    parser.add_argument('--hidden_size', type=int , default=512 ,
+                        help='dimension of lstm hidden states')
+    parser.add_argument('--num_layers', type=int , default=3 ,
+                       help='number of layers in lstm')  
+    parser.add_argument('--num_epochs', type=int, default=15)
+    parser.add_argument('--batch_size', type=int, default=4)
+    parser.add_argument('--num_workers', type=int, default=2)
+    parser.add_argument('--learning_rate', type=float, default=0.001)
+    parser.add_argument('--split', type=float, default=0.9)
+    parser.add_argument('--bi', type=bool, default=False)
+    parser.add_argument('--lr', type=float, default=1e-3)
+    
+    
+    args = parser.parse_args()
+    main(args)
