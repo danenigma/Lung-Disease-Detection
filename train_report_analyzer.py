@@ -98,7 +98,7 @@ def main(args):
 	print('val ds: ',  len(val_ds))
 	best_val = validate(model, val_data_loader, 
 						criterion, bsz=args.batch_size)/n_val_batchs
-	return
+	
 	print("starting val loss {:f}".format(best_val))
 	
 	for epoch in range(args.num_epochs):
