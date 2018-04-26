@@ -153,7 +153,8 @@ def main(args):
 					best_val = val_loss
 					print("Found new best val")
 					torch.save(model.state_dict(),model_path)
-
+					if val_loss<0.6:
+						break
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_dir', type=str, default='models/' ,
