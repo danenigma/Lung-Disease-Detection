@@ -68,7 +68,7 @@ def main(args):
 						 shuffle = True,
 						 collate_fn = report_collate)
 	vocab_size = len(lang_word.word2index)
-
+	print('vocab: ', vocab_size)
 	model = ReportAnalysis(vocab_size=vocab_size,
 						   embedding_dim=args.embed_size, 
 						   hidden_dim=args.hidden_size, 
