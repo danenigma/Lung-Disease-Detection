@@ -26,13 +26,15 @@ def validate(model, data_loader, criterion, bsz=4):
 		labels    = to_var(batch_dict['labels'])
 		if reports.shape[1]!=bsz:break
 		out       = model(reports, seq_lens)
-		pred      = out.data.max(1, keepdim=True)[1].int()
-		predicted = pred.eq(labels.data.view_as(pred).int())
+		pred      = out.data>0.5
+		
+		predicted = pred.eq(labels.data.view_as(pred).byte())
 		correct  += predicted.sum()
+		
 		loss      = criterion(out.squeeze(1), labels.float())
 	
 		val_loss += loss.data.sum()
-		
+	
 	print('val acc : ', correct/770)
 	return val_loss
 
@@ -66,7 +68,7 @@ def main(args):
 						 shuffle = True,
 						 collate_fn = report_collate)
 	vocab_size = len(lang_word.word2index)
-	
+
 	model = ReportAnalysis(vocab_size=vocab_size,
 						   embedding_dim=args.embed_size, 
 						   hidden_dim=args.hidden_size, 
@@ -75,7 +77,7 @@ def main(args):
 						   label_size=1,
 						   bidirectional=args.bi)
 						   
-	criterion = nn.BCEWithLogitsLoss()
+	criterion = nn.BCELoss()
 	print(model)
 
 	model_path = os.path.join(args.model_dir, args.model_name)	
@@ -89,19 +91,19 @@ def main(args):
 	if torch.cuda.is_available():
 		model.cuda()
 		criterion.cuda()
-	
+
 	optimizer  = torch.optim.Adam(model.parameters(), lr=args.lr)
+
 	
-		
 	print('validating.....')
 	n_train_batchs   = len(train_ds)//args.batch_size
 	n_val_batchs     = len(val_ds)//args.batch_size
 	print('val ds: ',  len(val_ds))
 	best_val = validate(model, val_data_loader, 
 						criterion, bsz=args.batch_size)/n_val_batchs
-	
+
 	print("starting val loss {:f}".format(best_val))
-	
+
 	for epoch in range(args.num_epochs):
 
 		model.train()
@@ -110,21 +112,22 @@ def main(args):
 		epoch_time = time.time()
 		for batch_index, batch_dict in enumerate(train_data_loader):
 			optimizer.zero_grad()
-	
+
 			reports   = to_var(batch_dict['reports'])
 			if reports.shape[1]!=args.batch_size:break
 			seq_lens  = batch_dict['seq_lens']
 			labels    = to_var(batch_dict['labels'])
-			
+		
 			model.hidden = model.init_hidden()
-			
+		
 			out       = model(reports, seq_lens)
-			pred      = out.data.max(1, keepdim=True)[1].int()
-			predicted = pred.eq(labels.data.view_as(pred).int())
+			pred      = out.data>0.5
+			predicted = pred.eq(labels.data.view_as(pred).byte())
 			correct  += predicted.sum()
+
 			loss      = criterion(out.squeeze(1), labels.float())
 			epoch_loss += loss.data.sum()
-							
+						
 			loss.backward()
 			grad_norm = nn.utils.clip_grad_norm(model.parameters(), 200)
 			optimizer.step()
@@ -141,9 +144,9 @@ def main(args):
 		print(
 			'|epoch {:3d}|valid loss {:5.4f}|'
 			'train loss {:8.4f}'.format(
-			    epoch + 1,
-			    val_loss,
-			    epoch_loss/n_train_batchs))
+				epoch + 1,
+				val_loss,
+				epoch_loss/n_train_batchs))
 			# Save the models
 		if (epoch+1) % args.save_step == 0:
 				if val_loss < best_val:
@@ -157,7 +160,7 @@ if __name__ == '__main__':
                         help='path for saving trained models')
     parser.add_argument('--data_dir', type=str, default='data/' ,
                         help='directory for resized images')
-    parser.add_argument('--log_step', type=int , default=1,
+    parser.add_argument('--log_step', type=int , default=10,
                         help='step size for prining log info')
     parser.add_argument('--save_step', type=int , default=1,
                         help='step size for saving trained models')
@@ -166,9 +169,9 @@ if __name__ == '__main__':
     # Model parameters
     parser.add_argument('--embed_size', type=int , default=256 ,
                         help='dimension of word embedding vectors')
-    parser.add_argument('--hidden_size', type=int , default=256 ,
+    parser.add_argument('--hidden_size', type=int , default=64 ,
                         help='dimension of lstm hidden states')
-    parser.add_argument('--num_layers', type=int , default=3 ,
+    parser.add_argument('--num_layers', type=int , default=1 ,
                        help='number of layers in lstm')  
     parser.add_argument('--num_epochs', type=int, default=15)
     parser.add_argument('--batch_size', type=int, default=4)
