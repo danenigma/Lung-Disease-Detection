@@ -10,6 +10,8 @@ __pycache__/
 *.jpg
 *.xml
 *.zip
+*.pdf
+*.pkl
 # Distribution / packaging
 .Python
 env/

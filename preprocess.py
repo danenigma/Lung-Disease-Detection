@@ -28,8 +28,8 @@ for file_name in os.listdir(data_dir):
 	try:	
 		img_path = root[IMAGE_PATH].attrib['id']
 		image_paths.append(img_path)
-		label = root[MESH][MAJOR].text
-		if(label.lower()=='normal'):
+		major = root[MESH][MAJOR].text
+		if(major.lower()=='normal'):
 			label = 0
 		else:#abnormal
 			label = 1
@@ -41,12 +41,12 @@ for file_name in os.listdir(data_dir):
 				report.append(elem.text)
 
 		report_str = "\n".join(report)
-		data.append([img_path, report_str, label])
+		data.append([img_path, report_str, label, major])
 	except:
 		pass
 		#print("image doesn't exist")
 
-df = pd.DataFrame(data, columns=['file', 'report', 'label',])
+df = pd.DataFrame(data, columns=['file', 'report', 'label','caption'])
 train_table = df.sample(frac=0.80) #70-30 split
 val_table   = df[~df['file'].isin(train_table['file'])]
 
