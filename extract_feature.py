@@ -18,7 +18,7 @@ def get_model(model_path=None):
         torch.save(model, 'models/vgg_model.pth')
     else:
         model = torch.load(model_path)
-    return torch.nn.DataParallel(model, device_ids=[0, 1, 2])
+    return model
 
 
 def get_transform():
@@ -59,8 +59,7 @@ def main(args):
     batch_size = args.batch_size
     shuffle = args.shuffle
     num_workers = args.num_workers
-    model = get_model(args.model_path).cuda()
-    model.eval()
+    model = get_model(args.model_path)
     features, names = extract_features(root, files, transform, batch_size, shuffle, num_workers, model)
     torch.save((names, features), args.save_name)
 
