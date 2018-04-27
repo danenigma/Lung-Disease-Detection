@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
 import torchvision.models as models
-from data_loader import get_loader
+from data_loader_openi import *
 import argparse
 from torch.autograd import Variable
 
