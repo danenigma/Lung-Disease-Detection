@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
 import torchvision.models as models
-from data_loader_openi import *
+from feat_data_loader import *
 import argparse
 from torch.autograd import Variable
 
@@ -26,7 +26,8 @@ def get_transform():
 def extract_features(root, files, transform, batch_size, shuffle, num_workers, model):
 
 	dataloader = get_loader(root, files, transform, batch_size, shuffle, num_workers)
-	#model = model.cuda()
+
+	model = model.cuda()
 	model.eval()
 
 	features = []
