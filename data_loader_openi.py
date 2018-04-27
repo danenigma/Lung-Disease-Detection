@@ -21,14 +21,24 @@ from build_vocab import *
 
 class OpenIDataset(data.Dataset):
 
-	def __init__(self, vocab, feature_path='data', name = 'train', transform=None):
-		self.table     = pd.read_pickle(os.path.join(feature_path,'{}_table.pkl'.format(name)))
-		self.data_dir  = feature_path
+	def __init__(self, vocab, table_path ='data/', 
+							  feature_path='data/feat_openi.pth', 
+							  name = 'train', transform=None):
+							  
+		self.table = pd.read_pickle(os.path.join(table_path,
+										'{}_table.pkl'.format(name)))
+		self.feature_path = feature_path
 		self.transform = transform
-		self._vocab    = vocab #pickle.load(open(vocab_path, 'rb'))
-	
+		self._vocab    = vocab 
+		self._features = torch.load(feature_path)
+		
 	def __len__(self):
 		return len(self.table)
+	def _build_index(self):
+		imageName_to_feature_idx = {}
+        for idx, name in enumerate(self._features[0]):
+            imageName_to_feature_idx[name] = idx
+        self._imageName_to_feature_idx = imageName_to_feature_idx
 
 	def _get_caption_tensor(self, caption):
 		vocab = self._vocab
@@ -42,16 +52,15 @@ class OpenIDataset(data.Dataset):
 	
 	def __getitem__(self, idx):
 		img_name = self.table.iloc[idx, 0]
-		fullname = os.path.join(self.data_dir, img_name+'.png')
-		image  = Image.open(fullname).convert('RGB')
-		image = image.resize([224, 224], Image.LANCZOS)
-		if self.transform:
-			image = self.transform(image)
+		fullname = img_name+'.png'
+		
+		feature_idx = self._imageName_to_feature_idx[fullname]
+		feature     = self._features[feature_idx]
 		
 		caption = self.table.iloc[idx, 3]
 		caption = self._get_caption_tensor(caption)
 
-		return image, caption
+		return feature, caption
 
 	def collate_fn(self, data):
 		data.sort(key=lambda x: len(x[1]), reverse=True)
@@ -102,13 +111,14 @@ if __name__=='__main__':
 	val_captions   = val_table.caption
 	val_captions   = [caption for caption in val_captions]
 	captions.extend(val_captions)
-	vocab = build_vocab(captions, threshold=0)
+	vocab = build_vocab_openi(captions, threshold=0)
 
 	
 	
-	loader = get_loader(vocab, feature_path, batch_size=2,
+	loader    = get_loader(vocab, feature_path, batch_size=2,
                 shuffle=True, num_workers=2, name='train', transform=transform) 
+	print('data loading done!!!!!!!')
 	for i, (feats, targets, lengths) in enumerate(loader):
-		print(i, feats.shape)
+		print(feats.shape)
 		break	
 	
