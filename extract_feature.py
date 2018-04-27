@@ -6,7 +6,11 @@ from feat_data_loader import *
 import argparse
 from torch.autograd import Variable
 
-
+def to_var(x, volatile=False):
+    if torch.cuda.is_available():
+        x = x.cuda()
+    return Variable(x, volatile=volatile)
+    
 def get_model(model_path=None):
     if model_path is None:
         vgg = models.vgg16_bn(pretrained=True)
@@ -26,15 +30,17 @@ def get_transform():
 def extract_features(root, files, transform, batch_size, shuffle, num_workers, model):
 
 	dataloader = get_loader(root, files, transform, batch_size, shuffle, num_workers)
-
-	model = model.cuda()
+	
+	if torch.cuda.is_available():
+		model = model.cuda()
+		
 	model.eval()
 
 	features = []
 	imnames = []
 	n_iters = len(dataloader)
 	for i, (images, names) in enumerate(dataloader):
-		images = Variable(images).cuda()
+		images = to_var(images)
 		feas = model(images).cpu()
 		features.append(feas.data)
 		imnames.extend(names)
