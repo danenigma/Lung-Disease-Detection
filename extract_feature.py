@@ -38,7 +38,6 @@ def extract_features(root, files, transform, batch_size, shuffle, num_workers, m
 		feas = model(images).cpu()
 		features.append(feas.data)
 		imnames.extend(names)
-		break
 		if (i+1)%100 == 0:
 			print('iter [%d/%d] finsihed.'%(i, n_iters))
 
