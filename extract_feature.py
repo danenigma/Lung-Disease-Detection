@@ -11,7 +11,7 @@ def get_model(model_path=None):
     if model_path is None:
         vgg = models.vgg16_bn(pretrained=True)
         model = nn.Sequential(*(vgg.features[i] for i in range(29)))
-        torch.save(model, '../model/vgg_model.pth')
+        torch.save(model, 'models/vgg_model.pth')
     else:
         model = torch.load(model_path)
     return torch.nn.DataParallel(model, device_ids=[0, 1, 2])
