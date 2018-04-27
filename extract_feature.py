@@ -41,7 +41,6 @@ def extract_features(root, files, transform, batch_size, shuffle, num_workers, m
 	n_iters = len(dataloader)
 	for i, (images, names) in enumerate(dataloader):
 		images = to_var(images)
-		print('images: ', images)	
 		feas = model(images).cpu()
 		features.append(feas.data)
 		imnames.extend(names)
