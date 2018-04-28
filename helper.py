@@ -9,9 +9,9 @@ __all__=['decode_captions',
 def decode_captions(captions, idx_to_word):
     N, D = captions.shape
     decoded = []
-    for idx in xrange(N):
+    for idx in range(N):
         words = []
-        for wid in xrange(D):
+        for wid in range(D):
             word = idx_to_word[captions[idx, wid]]
             if word == '<end>' or word == '<start>' or word == '<unk>':
                 words.append('.')

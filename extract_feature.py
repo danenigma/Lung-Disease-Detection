@@ -14,7 +14,7 @@ def to_var(x, volatile=False):
 def get_model(model_path=None):
     if model_path is None:
         vgg = models.vgg16_bn(pretrained=True)
-        model = nn.Sequential(*(vgg.features[i] for i in range(29)))
+        model = nn.Sequential(*(vgg.features[i] for i in range(35)))
         torch.save(model, 'models/vgg_model.pth')
     else:
         model = torch.load(model_path)
@@ -44,8 +44,7 @@ def extract_features(root, files, transform, batch_size, shuffle, num_workers, m
 		feas = model(images).cpu()
 		features.append(feas.data)
 		imnames.extend(names)
-		if (i+1)==3469:
-			break
+		
 		if (i+1)%100 == 0:
 			print('iter [%d/%d] finsihed.'%(i, n_iters))
 
@@ -79,7 +78,11 @@ if __name__ == '__main__':
     parser.add_argument('--save_name', type=str, default='data/feat_openi.pth', help='Where to save the files.')
     args = parser.parse_args()
     print(args)
+    #x= torch.randn(1,3,224,224)
     main(args)
+    #model = get_model(model_path=None)
+    #print(model)
+    #print(model(Variable(x)).shape)
     print('Done.')
 
 

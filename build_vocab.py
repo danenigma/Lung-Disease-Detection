@@ -2,7 +2,6 @@
 import pickle
 import json
 import os
-import nltk
 import argparse
 import pandas as pd
 from collections import Counter
