@@ -69,7 +69,7 @@ class OpenIReportDataset(data.Dataset):
 
 	def __init__(self, lang, data_dir='data', name = 'train'):
 
-		self.table     = pd.read_pickle(os.path.join(data_dir,
+		self.table     = pd.read_pickle(os.path.join('data',
 										'{}_table.pkl'.format(name)))
 		self.data_dir  = data_dir
 		self.lang      = lang
