@@ -4,10 +4,11 @@ import numpy  as np
 import matplotlib.pyplot as plt 
 import torch
 
-data_dir = 'data/images'
+data_dir = 'data/'
 name     = 'val'
 table    = pd.read_pickle(os.path.join(data_dir,'{}_table.pkl'.format(name)))
-print(len(table))
+print(table)
+'''
 labels   = [label for label in table.label]
 print('abnormal: ', sum(labels)/len(labels))
 print('normal: ', 1-(sum(labels)/len(labels)))
@@ -17,3 +18,4 @@ print(data_dist)
 print(len(table))
 plt.hist(np.array(labels))
 plt.show()
+'''

@@ -92,7 +92,42 @@ class VGGNet(nn.Module):
 		features = F.relu(self.linear3(features))
 
 		return features
+		
+class VGG16(nn.Module):
 
+	def __init__(self):
+		"""Load the pretrained VGG-16 and replace top fc layer."""
+		super(VGG16, self).__init__()
+		self.vggnet = models.vgg16(pretrained=True)
+		self.vggnet.classifier = nn.Linear(self.vggnet.classifier[0].in_features, 17)
+		#self.init_weights()
+		
+	def init_weights(self):
+		"""Initialize the weights."""
+		self.linear1.weight.data.normal_(0.0, 0.02)
+		self.linear1.bias.data.fill_(0)
+
+		self.linear2.weight.data.normal_(0.0, 0.02)
+		self.linear2.bias.data.fill_(0)
+
+		prop_abnormal = 0.635
+		data_dist = torch.FloatTensor([1-prop_abnormal, prop_abnormal])
+
+		self.linear3.weight.data.normal_(0.0, 0.02)
+		self.linear3.bias.data = data_dist #fill_(0)
+
+		
+	def forward(self, images):
+		"""Extract the image feature vectors."""
+		features = self.vggnet(images)
+		features = Variable(features.data)
+		features = features.view(features.size(0), -1)
+		features = F.relu(self.linear1(features))
+		features = F.relu(self.linear2(features))
+		features = F.relu(self.linear3(features))
+
+		return features
+		
 class DenseNet121(nn.Module):
 
 	def __init__(self):
