@@ -233,7 +233,7 @@ class EncoderVGG(nn.Module):
     def __init__(self, model_path=None):
         super(EncoderVGG, self).__init__()
         if model_path is None:
-            vgg = models.vgg16(pretrained=True)
+            vgg = models.vgg16_bn(pretrained=True)
             self._vgg_extractor = nn.Sequential(*(vgg.features[i] for i in range(35)))
         else:
             self._vgg_extractor = torch.load(model_path)
@@ -278,7 +278,9 @@ class Decoder(nn.Module):
         # N-1-D
         att_full = nn.ReLU()(att_fea + att_h + self.att_bias.view(1, -1, 1))
         att_out = self.att_w(att_full).squeeze(2)
+        #print(att_out.shape)
         alpha = nn.Softmax()(att_out)
+        #print('alpha: ', alpha.shape)
         # N-L
         context = torch.sum(features * alpha.unsqueeze(2), 1)
         return context, alpha
@@ -310,6 +312,7 @@ class Decoder(nn.Module):
             batch_size = sum(i >= step for i in lengths)
             if step != 0:
                 feas, alpha = attention_layer(features[:batch_size, :], h0[:batch_size, :])
+            #feas  = torch.zeros_like(feas) 
             words = (word_embeddings[:batch_size, step, :]).squeeze(1)
             inputs = torch.cat([feas, words], 1)
             h0, c0 = lstm_cell(inputs, (h0[:batch_size, :], c0[:batch_size, :]))

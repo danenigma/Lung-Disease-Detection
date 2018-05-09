@@ -36,7 +36,7 @@ def attention_visualization(root, image_name, caption, alphas):
         plt.imshow(image)
         # print alphas
         alp_curr = alphas[t, :].view(14, 14)
-        alp_img = skimage.transform.pyramid_expand(alp_curr.numpy(), upscale=16, sigma=20)
+        alp_img  = skimage.transform.pyramid_expand(alp_curr.numpy(), upscale=16, sigma=50)
         plt.imshow(alp_img, alpha=0.85)
         plt.axis('off')
     plt.show()

@@ -56,7 +56,7 @@ class OpenIDataset(data.Dataset):
     def __getitem__(self, idx):
         img_name = self.table.iloc[idx, 0]
         fullname = img_name+'.png'
-
+        #print(fullname)
         feature_idx = self._imageName_to_feature_idx[fullname]
         feature     = self._features[feature_idx].view(512,-1)
         caption = self.table.iloc[idx, 3]

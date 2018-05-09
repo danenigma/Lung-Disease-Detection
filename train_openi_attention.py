@@ -12,6 +12,7 @@ def to_var(x, volatile=False):
 def train(dataloader, model, optimizer, criterion, epoch, total_epoch):
     total_step = len(dataloader)
     # print 'Total step:', total_step
+    epoch_loss = 0
     for i, (features, targets, lengths) in enumerate(dataloader):
         optimizer.zero_grad()
         features = to_var(features).transpose(1,2)
@@ -20,15 +21,30 @@ def train(dataloader, model, optimizer, criterion, epoch, total_epoch):
         predicts = pack_padded_sequence(predicts, [l-1 for l in lengths], batch_first=True)[0]
         targets = pack_padded_sequence(targets[:, 1:], [l-1 for l in lengths], batch_first=True)[0]
         loss = criterion(predicts, targets)
+        epoch_loss+=loss.data.sum()
         loss.backward()
         optimizer.step()
-        if (i+1)%10 == 0:
-            print('Epoch [%d/%d]: [%d/%d], loss: %5.4f, perplexity: %5.4f.'%(epoch, total_epoch,i,
-                                                                             total_step,loss.data[0],
-                                                                             np.exp(loss.data[0])))
+        #if (i+1)%30 == 0:
+        #    print('Epoch [%d/%d]: [%d/%d], loss: %5.4f, perplexity: %5.4f.'%(epoch, total_epoch,i,
+        #                                                                     total_step,epoch_loss/(i+1),
+        #                                                                    np.exp(epoch_loss/(i+1))))
+    return epoch_loss/total_step
 
-def test():
-    pass
+def validate(dataloader, model, criterion):
+    total_step = len(dataloader)
+    # print 'Total step:', total_step
+    model.eval()
+    total_loss = 0
+    for i, (features, targets, lengths) in enumerate(dataloader):
+        features = to_var(features).transpose(1,2)
+        targets = to_var(targets)
+        predicts = model(features, targets[:, :-1], [l - 1 for l in lengths])
+        predicts = pack_padded_sequence(predicts, [l-1 for l in lengths], batch_first=True)[0]
+        targets = pack_padded_sequence(targets[:, 1:], [l-1 for l in lengths], batch_first=True)[0]
+        loss = criterion(predicts, targets)
+        total_loss += loss.data.sum() 
+    return total_loss/total_step
+
 
 
 def main(args):
@@ -59,9 +75,16 @@ def main(args):
                             num_workers=num_workers, 
                             name='train', 
                             transform=transform) 
+    val_dataloader = get_loader(vocab, 
+                        feature_path= feature_path, 
+                        batch_size = batch_size,
+                        shuffle=True, 
+                        num_workers=num_workers, 
+                        name='val', 
+                        transform=transform) 
+
     
     vocab_size = len(vocab)
-    print('vocab: ', len(vocab))
    
     # model setting
     vis_dim = args.vis_dim
@@ -90,9 +113,18 @@ def main(args):
     model.train()
     
     print('Number of epochs:', num_epochs)
+    best_val_loss = validate(val_dataloader, model, criterion)
+    print('val_loss: ', best_val_loss)
+    
     for epoch in range(num_epochs):
-        train(dataloader=dataloader, model=model, optimizer=optimizer, criterion=criterion,
+        train_loss = train(dataloader=dataloader, model=model, optimizer=optimizer, criterion=criterion,
               epoch=epoch, total_epoch=num_epochs)
+        val_loss = validate(val_dataloader, model, criterion)
+        print('='*70)
+        print('|Epoch [%d/%d]|validation | %5.2f | %5.2f | Training | %5.2f | %5.2f |'%(epoch, 
+                                                                                        num_epochs, 
+                                                                                        val_loss,np.exp(val_loss), 
+                                                                                        train_loss, np.exp(train_loss)))
         torch.save(model, 'checkpoints/attn_model.pth')
         
 
@@ -115,12 +147,11 @@ if __name__ == '__main__':
     parser.add_argument('--hidden_dim', type=int, default=512)
     parser.add_argument('--vocab_size', type=int, default=155)
     parser.add_argument('--num_layers', type=int, default=1)
-    parser.add_argument('--dropout_ratio', type=float, default=0.5)
+    parser.add_argument('--dropout_ratio', type=float, default=0.8)
 
     # optimizer setting
     parser.add_argument('--lr', type=float, default=0.0001)
-    parser.add_argument('--num_epochs', type=int, default=120)
+    parser.add_argument('--num_epochs', type=int, default=150)
 
     args = parser.parse_args()
-    print(args)
     main(args)
