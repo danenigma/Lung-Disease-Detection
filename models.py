@@ -132,7 +132,7 @@ class DenseNet121(nn.Module):
 		modules  = list(densenet.children())[:-1]      # delete the last fc layer.
 		modules.append(nn.AvgPool2d(kernel_size=7))
 		self.features   = nn.Sequential(*modules)
-		print(densenet.classifier.in_features)
+		#print(densenet.classifier.in_features)
 		self.classifier = nn.Sequential(
 						  nn.Linear(densenet.classifier.in_features, 1024),
 						  nn.ReLU(),
@@ -354,7 +354,7 @@ class Decoder(nn.Module):
         hidden_dim = self.hidden_dim
         h0 = to_var(torch.zeros(batch_size, hidden_dim))
         c0 = to_var(torch.zeros(batch_size, hidden_dim))
-        return h0, c0
+        return
 
 if __name__=='__main__':
 	resnet = ResNetCNN()

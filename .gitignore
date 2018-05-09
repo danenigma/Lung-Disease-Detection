@@ -5,6 +5,8 @@ __pycache__/
 
 # C extensions
 *.pth
+*.pt
+*.npy
 *.so
 *.jpeg
 *.png
